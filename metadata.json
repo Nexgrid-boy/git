@@ -1,0 +1,6 @@
+{
+  "name": "JobPilot AI",
+  "description": "AI-powered legitimate job finder, match scorer, tailored application material generator with human approval safeguard, and application tracker.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

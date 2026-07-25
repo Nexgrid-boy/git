@@ -1,0 +1,101 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    function isNewDocOwner() {
+      return isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Profiles collection
+    match /profiles/{profileId} {
+      allow read, update, delete: if isDocOwner();
+      allow create: if isNewDocOwner();
+    }
+
+    // Automation Settings collection
+    match /automationSettings/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read, update, delete: if isDocOwner();
+      allow create: if isNewDocOwner();
+    }
+
+    // Documents collection (CV versions)
+    match /documents/{documentId} {
+      allow read, update, delete: if isDocOwner();
+      allow create: if isNewDocOwner();
+    }
+
+    // Job Preferences collection
+    match /jobPreferences/{prefId} {
+      allow read, update, delete: if isDocOwner();
+      allow create: if isNewDocOwner();
+    }
+
+    // Jobs collection
+    match /jobs/{jobId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    // Job Matches collection
+    match /jobMatches/{matchId} {
+      allow read, update, delete: if isDocOwner();
+      allow create: if isNewDocOwner();
+    }
+
+    // Application Drafts collection
+    match /applicationDrafts/{draftId} {
+      allow read, update, delete: if isDocOwner();
+      allow create: if isNewDocOwner();
+    }
+
+    // Applications collection
+    match /applications/{appId} {
+      allow read, update, delete: if isDocOwner();
+      allow create: if isNewDocOwner();
+    }
+
+    // Search Runs collection - Users can read their own runs; DIRECT WRITES FORBIDDEN FROM CLIENT
+    match /searchRuns/{runId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        (resource.data.eligibleUsers != null && resource.data.eligibleUsers > 0)
+      );
+      allow create, update, delete: if false; // Only server backend can modify search runs
+
+      // Tasks subcollection - Users can read their own tasks; DIRECT WRITES FORBIDDEN FROM CLIENT
+      match /tasks/{taskId} {
+        allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+        allow create, update, delete: if false; // Only worker backend can modify task records
+      }
+    }
+
+    // Audit Logs collection
+    match /auditLogs/{logId} {
+      allow read: if isDocOwner();
+      allow create: if isNewDocOwner();
+    }
+  }
+}
